@@ -7,10 +7,10 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'bot_jobs_ch'
+BOT_NAME = 'spider_ekatte_pop'
 
-SPIDER_MODULES = ['src.src_scrapy.spiders']
-NEWSPIDER_MODULE = 'src.src_scrapy.spiders'
+SPIDER_MODULES = ['spiders']
+NEWSPIDER_MODULE = 'spiders'
 
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
@@ -25,7 +25,7 @@ NEWSPIDER_MODULE = 'src.src_scrapy.spiders'
 DOWNLOAD_DELAY=1
 # The download delay setting will honor only one of:
 #CONCURRENT_REQUESTS_PER_DOMAIN=16
-CONCURRENT_REQUESTS_PER_IP=16
+CONCURRENT_REQUESTS_PER_IP=8
 
 # Disable cookies (enabled by default)
 COOKIES_ENABLED=True
@@ -52,7 +52,7 @@ COOKIES_ENABLED=True
 
 DOWNLOADER_MIDDLEWARES = {
         'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
-        'src.src_scrapy.utils.rotate_useragent.RotateUserAgentMiddleware': 400
+        'utils.rotate_useragent.RotateUserAgentMiddleware': 400
 }
 
 LOG_FILE = "../logs/scrapy_main.log"
@@ -69,8 +69,7 @@ LOG_ENABLED = True
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'src.src_scrapy.pipelines.preparedata_pipeline.PrepareDataPipeline': 200,
-   'src.src_scrapy.pipelines.postgres_writer_pipeline.PostgresWriterPipeline': 300
+   'pipelines.csv_writer_pipeline.CsvWriterPipeline': 200
 }
 
 

@@ -1,7 +1,7 @@
 from scrapy.item import Item, Field
 
 
-class JobItem(Item):
+class EkatteItem(Item):
     # DONE
     unique_id = Field()  # a unique auto-generated ID for storing in DB
     # DONE
