@@ -1,0 +1,4 @@
+start_sid: 1
+max_sid: 5460
+
+base_url: "https://www.nsi.bg/nrnm/show9.php?sid="
