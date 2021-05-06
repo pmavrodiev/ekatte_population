@@ -13,7 +13,7 @@ DEBUG = _logging.DEBUG
 # Logging set-up
 name = 'houston'
 
-logging_level = WARNING
+logging_level = INFO
 
 flog = None
 log_format = ('%(levelname)s:houston:'

@@ -8,11 +8,11 @@ class SQLiteWriterPipeline(object):
    
     def __init__(self):
         self.write_counter = 0
-        self.write_chunks = 100  # number of rows to write in one transaction
+        self.write_chunks = 1000  # number of rows to write in one transaction
 
     def open_spider(self, spider):
         self.connection = sqlite.connect(os.path.join(sys.path[0],
-                                                      "../data/ekatte_pop.sqlite"))
+                                                      "../data/ekatte_pop_1.sqlite"))
         self.cursor = self.connection.cursor()
         self.cursor.execute('CREATE TABLE IF NOT EXISTS ekatte_pop ' +
                             '(id INTEGER PRIMARY KEY, ' +
@@ -44,10 +44,9 @@ class SQLiteWriterPipeline(object):
                                         item['population']))
 
         self.write_counter = self.write_counter + 1
-        self.connection.commit()
-
+        
         if not self.write_counter % self.write_chunks:
-            logging.debug(f'Writing chunk {self.write_counter}')
+            logging.info(f'Writing chunk {self.write_counter}')
             self.cursor.execute('END TRANSACTION')
             self.connection.commit()
         logging.info("Item stored")
