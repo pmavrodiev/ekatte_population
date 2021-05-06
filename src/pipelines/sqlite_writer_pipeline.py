@@ -12,7 +12,7 @@ class SQLiteWriterPipeline(object):
 
     def open_spider(self, spider):
         self.connection = sqlite.connect(os.path.join(sys.path[0],
-                                                      "../data/ekatte_pop_1.sqlite"))
+                                                      "../data/ekatte_pop.sqlite"))
         self.cursor = self.connection.cursor()
         self.cursor.execute('CREATE TABLE IF NOT EXISTS ekatte_pop ' +
                             '(id INTEGER PRIMARY KEY, ' +
