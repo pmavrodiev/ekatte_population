@@ -56,7 +56,8 @@ DOWNLOADER_MIDDLEWARES = {
 }
 
 LOG_FILE = "../logs/scrapy_main.log"
-LOG_ENABLED = True
+LOG_ENABLED = False
+LOG_LEVEL = "DEBUG"
 
 #
 # ROOT_LOG_DIR = "jobs/logs/"
@@ -69,7 +70,7 @@ LOG_ENABLED = True
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'pipelines.csv_writer_pipeline.CsvWriterPipeline': 200
+   'pipelines.sqlite_writer_pipeline.SQLiteWriterPipeline': 200
 }
 
 

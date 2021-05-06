@@ -3,6 +3,7 @@ import mylogging as logging
 import sys
 import os
 import yaml
+import re
 
 
 import urllib.parse as urlparse
@@ -11,7 +12,7 @@ from datetime import date
 
 from scrapy import spiders
 
-from .items import EkatteItem
+from spiders.items import EkatteItem
 
 
 
@@ -38,73 +39,61 @@ class EkatteSpider(spiders.Spider):
        
     def parse(self, response):
 
-        print("hello")
-        # get the href to the next page
-        href_next_page = self.get_next_page(response)
-        if href_next_page is not None:
-            request_next_page = scrapy.Request(href_next_page, callback=self.parse)
-            yield request_next_page
+        logging.info(f'Visiting {response.url}')
+        
+        table_summary = response.xpath("//table[@summary]")
 
-        EkatteSpider.logger.info("Looking for all hrefs on page {}: xpath(//@href)".format(response.url))
+        if len(table_summary) != 1:
+            # there should be precisely one 'table' element with an 
+            # attribute 'summary'
+            logging.warning(f'{response.url}: {len(table_summary)} table '
+                            f'elements. Skipping')
+            return
+        
+        table = table_summary[0]
 
-        # extract all hrefs from the left sidebar of the current page
-        job_hrefs = extract_all_job_hrefs(response, EkatteSpider.logger)
-        parsed_url = urlparse.urlparse(response.url)
-        current_search_term = "".join(parse_qs(parsed_url.query)['term'])
+        caption_all = ''.join(table.xpath('//caption//text()').getall())
+        #
+        ekatte_list = re.findall(r'\d+', caption_all)
+        if len(ekatte_list) != 1:
+            # there should be only one EKATTE number
+            logging.warning(f'{response.url}: {ekatte_list} is invalid. '
+                            f'Skipping')
+            return
 
-        """
-        test_url = "https://www.jobs.ch/en/vacancies/detail/9546846/?jobposition=1-4&source=vacancy_search"
-        url = response.urljoin(test_url)
-        request = scrapy.Request(url, callback=self.parse_job)
-        yield request
-        return
-        """
+        ekatte_str = ekatte_list[0]
+        
+        try:
+            int(ekatte_str)
+        except ValueError:
+            logging.error(f'{response.url}: {ekatte_str} is invalid. Skipping')
+            return
 
-        if len(job_hrefs) > 0:
-            EkatteSpider.logger.info("Extracted {} job hrefs from current page".format(str(len(job_hrefs))))
-            EkatteSpider.logger.debug("Proceeds with parsing individual job hrefs")
-            for job_href in job_hrefs:
-                url = response.urljoin(job_href)
-                request = scrapy.Request(url, callback=self.parse_job,
-                                         meta={'search_term': current_search_term})
-                yield request
+        # add left padding
+        ekatte_str = ekatte_str.rjust(5, '0')
+        
+        table_rows = table.xpath('//tr/*[contains(@class, "cmid")]/..')
 
-    def parse_job(self, response):
+        logging.debug(f'{response.url}: {len(table_rows)} date entries')
 
-        item = EkatteItem()
+        for row in table_rows:
+            cols = row.xpath('.//td/text()')
+            if len(cols) != 3:
+                logging.error(f'{response.url}: Malformatted row. Skipping')
+                continue
 
-        # job-specific and company info
-        item['job_title'] = extrtact_job_title(response, EkatteSpider.logger)
-        item['company_name'], item['location'] = \
-            extract_company_name_job_location(response, EkatteSpider.logger)
-        item['job_rank'] = extract_job_rank(response, EkatteSpider.logger)
-        item['occupation'] = extract_job_occupation(response, EkatteSpider.logger)
-        item['job_categories'] = extract_categories(response, EkatteSpider.logger)
-        item['search_term'] = response.meta.get('search_term')
+            date = cols[0].get()
+            population_string = cols[1].get()
+            try:
+                population = int(population_string)
+            except ValueError:
+                logger.error(f'{response.url}: Population {population_string} '
+                             f' is not a number. Skipping')
+                continue
 
-        # web-page content
-        item['raw_content'], item["parsed_content"] = \
-            extract_raw_processed_content(response, EkatteSpider.logger)
+            item = EkatteItem()
+            item['ekatte_str'] = ekatte_str
+            item['date'] = date
+            item['population'] = population
 
-        item['content_language'] = ""
-        if item["parsed_content"] != "":
-            item['content_language'] = langdetect.detect(item["parsed_content"])
-            EkatteSpider.logger.debug("Detected '{}' as content "
-                                    "language for posting {}".format(item['content_language'], response.url))
-
-        # meta-info
-        u = urlparse.urlparse(response.url)._replace(query='')  # remove the query part of the url
-
-        item['url'] = urlparse.urlunparse(u)
-        item['posting_id'] = extract_posting_id(item['url'], EkatteSpider.logger)
-
-        item['unique_id'] = hash_posting(hash_fields=(item.get('posting_id', ''),
-                                                      item.get('job_title', ''),
-                                                      item.get('company_name', '')
-                                                      ),
-                                         logger=EkatteSpider.logger)
-        item['source'] = get_base_url(item['url'])
-        item['date_parsed'] = str(date.today())
-        item['date_published'] = extract_job_date_published(response, EkatteSpider.logger)
-
-        yield item
+            yield item
