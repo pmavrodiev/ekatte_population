@@ -1,4 +1,4 @@
-# Requirements
+# Dependencies
 
 Python 3.8
 

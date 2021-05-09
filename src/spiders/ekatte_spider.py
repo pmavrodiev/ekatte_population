@@ -34,8 +34,14 @@ class EkatteSpider(spiders.Spider):
         start_sid = params['start_sid']
         max_sid = params['max_sid']
         base_url = params['base_url']
+        
+        left_over = [6364, 6360, 6099]
+
 
         self.start_urls = [base_url + str(i) for i in range(start_sid, max_sid)]
+        self.start_urls = self.start_urls + [base_url + str(i) for i in left_over]
+
+       
        
     def parse(self, response):
 
